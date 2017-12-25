@@ -1,15 +1,15 @@
 # KrakenProject
 A commission project to scrape info from Kraken.com and display it to a Google Sheet in real time. 
 
-Requiremens: 
+Requirements: 
 Node,Git, Google Account, and a Kraken Account. 
 
-Step 1: Set up authaurization credentials with Google
+Step 1: Set up authorization credentials with Google
 Follow Step 1 of this guide: https://developers.google.com/sheets/api/quickstart/nodejs
 
 Step 2: Clone or fork this repo. 
 
-Step 3: type npm init to install all required packages. 
+Step 3: type npm i to install all required packages. 
 
 Step 4: Set up a .env file 
 
