@@ -8,8 +8,6 @@ const secret       = process.env.PRIVATE_KEY; // API Private Key
 const KrakenClient = require('kraken-api');
 const kraken       = new KrakenClient(key, secret);
 const sheet        = process.env.SHEET_ID;
-// If modifying these scopes, delete your previously saved credentials
-// at ~/.credentials/sheets.googleapis.com-nodejs-quickstart.json
 var SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
 var TOKEN_DIR = (process.env.HOME || process.env.HOMEPATH ||
     process.env.USERPROFILE) + '/.credentials/';
@@ -23,13 +21,11 @@ fs.readFile('client_secret.json', function processClientSecrets(err, content) {
   }
   // Authorize a client with the loaded credentials, then call the
   // Google Sheets API.
-  (async () => {
   // Display user's balance
 
   // Get Ticker Info
-  console.log(await kraken.api('Ticker', { pair : 'XXBTZUSD' }));
-})();
-  //authorize(JSON.parse(content), listMajors);
+
+  authorize(JSON.parse(content), main);
 });
 
 /**
@@ -52,7 +48,6 @@ function authorize(credentials, callback) {
       getNewToken(oauth2Client, callback);
     } else {
       oauth2Client.credentials = JSON.parse(token);
-
       callback(oauth2Client);
     }
   });
@@ -107,11 +102,55 @@ function storeToken(token) {
   console.log('Token stored to ' + TOKEN_PATH);
 }
 
-/**
- * Print the names and majors of students in a sample spreadsheet:
- * https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit
- */
-function listMajors(auth) {
+function main(auth){
+  setInterval(function(){
+  releaseTheKraken('DASHUSD,ETHUSD,XXBTZUSD,XRPUSD').then((function (r){
+    console.log(r);
+    printresult(auth,'B2:C7',r);
+  }));
+  },10000);
+  //printresult(auth,grangestr,arr);
+}
+
+function releaseTheKraken(pair){
+  return new Promise((resolve,reject)=>{
+    kraken.api('Ticker',{pair:pair}).then((function(result){
+    //console.log(result);
+    arr = [];
+      for(x in result.result){
+        //console.log(x);
+        //console.log(result.result[x].p);
+        arr.push(result.result[x].p);
+      }
+      resolve(arr);
+    })).catch(function(err){
+      reject(err);
+    });
+  });
+}
+
+
+function printresult(auth,rangestr,arr) {
+  var sheets = google.sheets('v4');
+  sheets.spreadsheets.values.update({
+    auth: auth,
+    spreadsheetId:sheet,
+    range: rangestr,
+    valueInputOption:'USER_ENTERED',
+    resource: {
+      "values":[arr[0],arr[1],arr[2],arr[3]]
+    },
+  }, function(err, response) {
+    if (err) {
+      console.log('The API returned an error: ' + err);
+      return;
+    }
+    console.log(response);
+  });
+}
+
+ //Template Function
+/*function printresult(auth) {
   var sheets = google.sheets('v4');
   sheets.spreadsheets.values.update({
     auth: auth,
@@ -128,4 +167,4 @@ function listMajors(auth) {
     }
     console.log(response);
   });
-}
+}*/
