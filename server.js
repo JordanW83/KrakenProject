@@ -5,6 +5,7 @@ var googleAuth = require('google-auth-library');
 require('dotenv').config()
 const key          = process.env.API_KEY; // API Key
 const secret       = process.env.PRIVATE_KEY; // API Private Key
+const WCI_KEY      = process.env.WCI_KEY;
 const KrakenClient = require('kraken-api');
 const kraken       = new KrakenClient(key, secret);
 const sheet        = process.env.SHEET_ID;
@@ -27,7 +28,7 @@ fs.readFile('client_secret.json', function processClientSecrets(err, content) {
 
   authorize(JSON.parse(content), main);
 });
-
+let alphabet = ["ABCDEFGHIJKLMNOPQRSTUVWXYZ"];
 /**
  * Create an OAuth2 client with the given credentials, and then execute the
  * given callback function.
@@ -104,25 +105,40 @@ function storeToken(token) {
 
 function main(auth){
   setInterval(function(){
-  releaseTheKraken('DASHUSD,ETHUSD,XXBTZUSD,XRPUSD').then((function (r){
-    console.log(r);
-    printresult(auth,'B2:C7',r);
+  releaseTheKraken('XBTUSD,XBTEUR,XBTCAD,ETHUSD,ETHEUR,ETHCAD,ETHXBT,LTCUSD,LTCEUR,LTCXBT,DASHUSD,DASHEUR,DASHXBT,REPETH,REPEUR,REPXBT,EOSETH,EOSXBT,GNOETH,GNOXBT,XLMXBT').then((function (r){
+    //console.log(r.result);
+    let values = [];
+    for(let x in r.result){
+      //console.log(x);
+      values.push(formatData(r.result[x],x));
+    }
+    printresult(auth,"A2:D30",{values:values});
+    //console.log(formatData(r.result));
+    //printresult(auth,'B2:D10',formatData(r[0]));
   }));
-  },10000);
-  //printresult(auth,grangestr,arr);
+  },5000);
+  setInterval(function(){getWCI(auth)},12000);
 }
+function getWCI(auth){
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.onreadystatechange = function() {
+        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
+            console.log(xmlHttp.responeText);
+    }
+    xmlHttp.open("GET", "", true); // true for asynchronous
+    xmlHttp.send(null);
 
+
+}
+function formatData(data,name){
+  let values =
+    [name,data.c[0],data.a[0],data.b[0]]
+  return values;
+}
 function releaseTheKraken(pair){
   return new Promise((resolve,reject)=>{
     kraken.api('Ticker',{pair:pair}).then((function(result){
-    //console.log(result);
-    arr = [];
-      for(x in result.result){
-        //console.log(x);
-        //console.log(result.result[x].p);
-        arr.push(result.result[x].p);
-      }
-      resolve(arr);
+      resolve(result);
     })).catch(function(err){
       reject(err);
     });
@@ -130,16 +146,14 @@ function releaseTheKraken(pair){
 }
 
 
-function printresult(auth,rangestr,arr) {
+function printresult(auth,rangestr,body) {
   var sheets = google.sheets('v4');
   sheets.spreadsheets.values.update({
     auth: auth,
     spreadsheetId:sheet,
     range: rangestr,
     valueInputOption:'USER_ENTERED',
-    resource: {
-      "values":[arr[0],arr[1],arr[2],arr[3]]
-    },
+    resource:body
   }, function(err, response) {
     if (err) {
       console.log('The API returned an error: ' + err);
