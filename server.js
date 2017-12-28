@@ -111,7 +111,7 @@ function main(auth){
     //printresult(auth,'B2:D10',formatData(r[0]));
   }));
   },5000);
-  setInterval(function(){getWCI(auth)},300000;
+  setInterval(function(){getWCI(auth)},300000);
 }
 function getWCI(auth){
   url = "https://www.worldcoinindex.com/apiservice/json?key="+WCI_KEY;
