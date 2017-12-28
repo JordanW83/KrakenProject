@@ -3,6 +3,7 @@ var readline = require('readline');
 var google = require('googleapis');
 var googleAuth = require('google-auth-library');
 require('dotenv').config()
+const https = require('https');
 const key          = process.env.API_KEY; // API Key
 const secret       = process.env.PRIVATE_KEY; // API Private Key
 const WCI_KEY      = process.env.WCI_KEY;
@@ -20,15 +21,8 @@ fs.readFile('client_secret.json', function processClientSecrets(err, content) {
     console.log('Error loading client secret file: ' + err);
     return;
   }
-  // Authorize a client with the loaded credentials, then call the
-  // Google Sheets API.
-  // Display user's balance
-
-  // Get Ticker Info
-
   authorize(JSON.parse(content), main);
 });
-let alphabet = ["ABCDEFGHIJKLMNOPQRSTUVWXYZ"];
 /**
  * Create an OAuth2 client with the given credentials, and then execute the
  * given callback function.
@@ -117,18 +111,33 @@ function main(auth){
     //printresult(auth,'B2:D10',formatData(r[0]));
   }));
   },5000);
-  setInterval(function(){getWCI(auth)},12000);
+  setInterval(function(){getWCI(auth)},300000;
 }
 function getWCI(auth){
-    var xmlHttp = new XMLHttpRequest();
-    xmlHttp.onreadystatechange = function() {
-        if (xmlHttp.readyState == 4 && xmlHttp.status == 200)
-            console.log(xmlHttp.responeText);
+  url = "https://www.worldcoinindex.com/apiservice/json?key="+WCI_KEY;
+  https.get(url, (resp) => {
+  let data = '';
+
+  // A chunk of data has been recieved.
+  resp.on('data', (chunk) => {
+    data += chunk;
+  });
+
+  // The whole response has been received. Print out the result.
+  resp.on('end', () => {
+    let result = JSON.parse(data).Markets;
+    //console.log(result);
+    let values = []
+    for (let x in result){
+      //console.log(result[x].Price_usd);
+      values.push([result[x].Name,result[x].Price_usd]);
     }
-    xmlHttp.open("GET", "", true); // true for asynchronous
-    xmlHttp.send(null);
+    printresult(auth,'F2:G1200',{values:values});
+  });
 
-
+}).on("error", (err) => {
+  console.log("Error: " + err.message);
+});
 }
 function formatData(data,name){
   let values =
